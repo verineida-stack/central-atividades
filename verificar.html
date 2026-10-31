@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificar certificado · Gestão na Saúde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#050170;--tinta:#0b2540;--ambar:#F2A63B;--ok:#1a7f4b;--okbg:#e6f4ec;--err:#b42318;--errbg:#fdecea;--cinza:#6b7280}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'IBM Plex Sans',Arial,sans-serif;color:var(--tinta);background:#f4f5fa;line-height:1.5}
+  header{background:var(--navy);color:#fff;padding:20px;border-bottom:5px solid var(--ambar);text-align:center}
+  header small{font-size:11px;letter-spacing:1.5px;color:#aac4ff;font-weight:600}
+  header h1{font-family:'Source Serif 4',Georgia,serif;margin:4px 0 0;font-size:24px}
+  main{max-width:520px;margin:30px auto;padding:0 16px}
+  .cartao{background:#fff;border:1px solid #dfe3ee;border-radius:10px;padding:22px}
+  input{width:100%;padding:11px 12px;border:1px solid #c5cbe0;border-radius:6px;font:inherit;text-transform:uppercase}
+  button{margin-top:12px;background:var(--navy);color:#fff;border:0;border-radius:6px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}
+  .res{margin-top:18px;border-radius:8px;padding:16px}
+  .valido{background:var(--okbg);color:var(--ok)} .invalido{background:var(--errbg);color:var(--err)}
+  .res h2{margin:0 0 8px;font-size:18px}
+  dl{margin:0;color:var(--tinta)} dt{font-size:12px;color:var(--cinza);margin-top:8px} dd{margin:0;font-weight:600}
+</style>
+</head>
+<body>
+<header><small>GESTÃO NA SAÚDE · VERINEIDA LIMA</small><h1>Verificação de certificado</h1></header>
+<main><div class="cartao">
+  <form id="f"><label for="cod">Código do certificado</label>
+  <input id="cod" placeholder="GNS-2026-XXXXXX" autocomplete="off"><button type="submit">Verificar</button></form>
+  <div id="res"></div>
+</div></main>
+<script>
+/* ====== COLE AQUI o endereço do App da Web da central (termina em /exec) ====== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwKPS27XvFxMCRyXmGRrPcjJrkUqIyUcUbHz5kMZKzGy1LL5k7VFOCEqUPOKkV8FqlH/exec';
+/* ============================================================================== */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function verificar(cod){
+  const res = document.getElementById('res');
+  res.innerHTML = '<p>Consultando…</p>';
+  try{
+    const r = await fetch(API_URL + '?acao=verificar&codigo=' + encodeURIComponent(cod));
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.erro);
+    res.innerHTML = j.valido
+      ? `<div class="res valido"><h2>✔ Certificado válido</h2><dl>
+          <dt>Aluno(a)</dt><dd>${esc(j.nome)}</dd><dt>Curso</dt><dd>${esc(j.curso)}</dd>
+          ${j.carga?`<dt>Carga horária</dt><dd>${esc(j.carga)} horas</dd>`:''}
+          <dt>Conclusão</dt><dd>${esc(String(j.data_conclusao).slice(0,10))}</dd>
+          <dt>Emissão</dt><dd>${esc(String(j.data_emissao).slice(0,10))}</dd><dt>Código</dt><dd>${esc(j.codigo)}</dd></dl></div>`
+      : `<div class="res invalido"><h2>Certificado não encontrado</h2>Confira o código. Em caso de dúvida, fale com a equipe Gestão na Saúde.</div>`;
+  }catch(e){ res.innerHTML = `<div class="res invalido">Não foi possível consultar agora. Tente de novo em instantes.</div>`; }
+}
+document.getElementById('f').onsubmit = e => { e.preventDefault(); const v = document.getElementById('cod').value.trim(); if(v) verificar(v); };
+const c = new URLSearchParams(location.search).get('c');
+if(c){ document.getElementById('cod').value = c; verificar(c); }
+if(/COLE_AQUI/.test(API_URL)) document.querySelector('header').insertAdjacentHTML('beforeend',
+  '<div style="margin-top:10px;background:#fdecea;color:#b42318;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:600">Modo de teste: esta página ainda não está ligada à central (falta a URL do Apps Script).</div>');
+</script>
+</body>
+</html>
